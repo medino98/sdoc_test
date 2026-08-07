@@ -18,7 +18,8 @@ STATEMENT: >>>
 Review record for the LVGL Safe PoC component, replacing the xls
 "Review Information" tab. Fields are enum-constrained by the grammar
 instead of Excel data-validation dropdowns, so an invalid value is a
-parse error, not a silently-accepted typo. Something else, here.
+parse error, not a silently-accepted typo. Something else, here just to
+stir things up.
 <<<
 DOCUMENT_UNDER_REVIEW: >>>
 \path\to\File A
