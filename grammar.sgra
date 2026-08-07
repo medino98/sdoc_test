@@ -1,0 +1,98 @@
+[GRAMMAR]
+ELEMENTS:
+- TAG: SECTION
+  PROPERTIES:
+    IS_COMPOSITE: True
+    PREFIX: None
+    VIEW_STYLE: Narrative
+  FIELDS:
+  - TITLE: UID
+    TYPE: String
+    REQUIRED: False
+  - TITLE: LEVEL
+    TYPE: String
+    REQUIRED: False
+  - TITLE: PREFIX
+    TYPE: String
+    REQUIRED: False
+  - TITLE: TITLE
+    TYPE: String
+    REQUIRED: True
+- TAG: REVIEW_META
+  PROPERTIES:
+    IS_COMPOSITE: False
+  FIELDS:
+  - TITLE: UID
+    TYPE: String
+    REQUIRED: False
+  - TITLE: REVIEW_TYPE
+    TYPE: SingleChoice(Software Unit Implementation Review, Software Architecture and Detailed Design Review, Software Unit Verification Review, Software Test Specification Review, Software Requirement Review, Generic Document Review)
+    REQUIRED: True
+  - TITLE: METHOD
+    TYPE: SingleChoice(4-Eye, Walkthrough, Inspection)
+    REQUIRED: True
+  - TITLE: REVIEW_DATE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: DECISION
+    TYPE: SingleChoice(To-be-released, To-be-released-after-rework, Not-to-be-released-successive-review-required)
+    REQUIRED: True
+  - TITLE: TITLE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: STATEMENT
+    TYPE: String
+    REQUIRED: True
+  - TITLE: DOCUMENT_UNDER_REVIEW
+    TYPE: String
+    REQUIRED: True
+- TAG: PARTICIPANT
+  PROPERTIES:
+    IS_COMPOSITE: False
+  FIELDS:
+  - TITLE: UID
+    TYPE: String
+    REQUIRED: False
+  - TITLE: NAME
+    TYPE: String
+    REQUIRED: True
+  - TITLE: PROJECT_ROLE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: REQUIREMENT_LEVEL
+    TYPE: SingleChoice(M, R, O, X)
+    REQUIRED: True
+  - TITLE: STATEMENT
+    TYPE: String
+    REQUIRED: False
+- TAG: FINDING
+  PROPERTIES:
+    IS_COMPOSITE: False
+    PREFIX: FINDING-
+  FIELDS:
+  - TITLE: UID
+    TYPE: String
+    REQUIRED: False
+  - TITLE: IDENTIFIER
+    TYPE: String
+    REQUIRED: True
+  - TITLE: SEVERITY
+    TYPE: SingleChoice(Suggestion, Minor, Major)
+    REQUIRED: True
+  - TITLE: FINDING_STATUS
+    TYPE: SingleChoice(Open, Closed)
+    REQUIRED: True
+  - TITLE: DONE_BY
+    TYPE: String
+    REQUIRED: True
+  - TITLE: FINDING_DATE
+    TYPE: String
+    REQUIRED: True
+  - TITLE: STATEMENT
+    TYPE: String
+    REQUIRED: True
+  - TITLE: REWORK_COMMENT
+    TYPE: String
+    REQUIRED: False
+  RELATIONS:
+  - TYPE: File
