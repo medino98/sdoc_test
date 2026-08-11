@@ -89,7 +89,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- "$REVIEW_DOC"
-          git commit -m "docs: seed review record REVIEW-PR${{ github.event.pull_request.number }}"
+          git commit -m "docs: seed review record REVIEW-PR${{ github.event.pull_request.number }} [skip ci]"
           # The reviewer may have pushed while this job was running.
           git pull --rebase origin "${{ github.event.pull_request.head.ref }}"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
