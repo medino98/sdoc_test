@@ -7,3 +7,46 @@ METADATA:
 
 [GRAMMAR]
 IMPORT_FROM_FILE: grammar.sgra
+
+[[REVIEW_RECORD]]
+UID: REVIEW-PR3
+TITLE: RN - SUIR (2026-08-11)
+REVIEW_TYPE: Software Unit Implementation Review
+METHOD: 4-Eye
+REVIEW_DATE: 2026-08-11
+DECISION: Not-to-be-released-successive-review-required
+STATEMENT: >>>
+Test review.
+<<<
+DOCUMENT_UNDER_REVIEW: >>>
+src/test.txt
+<<<
+
+[[SECTION]]
+TITLE: Participants
+
+[PARTICIPANT]
+UID: REVIEW-PR3-PARTICIPANT-001
+NAME: Máté Gulyás
+PROJECT_ROLE: Reviewer
+PRESENCE_STATUS: M
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Review Protocol
+
+[FINDING]
+UID: REVIEW-PR3-FINDING-001
+IDENTIFIER: src/test.txt -> line 1
+SEVERITY: Suggestion
+FINDING_STATUS: Open
+DONE_BY: Gulyás Máté
+FINDING_DATE: 2026-08-11
+STATEMENT: >>>
+Just a test.
+<<<
+
+[[/SECTION]]
+
+[[/REVIEW_RECORD]]
