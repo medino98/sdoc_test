@@ -101,6 +101,7 @@ STATEMENT: >>>
 baseline, and anything a later reader needs to interpret the decision.>
 <<<
 DOCUMENT_UNDER_REVIEW: >>>
+review_templates/Review_Record_TEMPLATE.sdoc
 src/test.txt
 <<<
 
