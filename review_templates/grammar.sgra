@@ -18,13 +18,18 @@ ELEMENTS:
   - TITLE: TITLE
     TYPE: String
     REQUIRED: True
-- TAG: REVIEW_META
+- TAG: REVIEW_RECORD
   PROPERTIES:
-    IS_COMPOSITE: False
+    IS_COMPOSITE: True
+    PREFIX: REVIEW-
+    VIEW_STYLE: Simple
   FIELDS:
   - TITLE: UID
     TYPE: String
     REQUIRED: False
+  - TITLE: TITLE
+    TYPE: String
+    REQUIRED: True
   - TITLE: REVIEW_TYPE
     TYPE: SingleChoice(Software Unit Implementation Review, Software Architecture and Detailed Design Review, Software Unit Verification Review, Software Test Specification Review, Software Requirement Review, Generic Document Review)
     REQUIRED: True
@@ -36,9 +41,6 @@ ELEMENTS:
     REQUIRED: True
   - TITLE: DECISION
     TYPE: SingleChoice(To-be-released, To-be-released-after-rework, Not-to-be-released-successive-review-required)
-    REQUIRED: True
-  - TITLE: TITLE
-    TYPE: String
     REQUIRED: True
   - TITLE: STATEMENT
     TYPE: String
@@ -59,7 +61,7 @@ ELEMENTS:
   - TITLE: PROJECT_ROLE
     TYPE: String
     REQUIRED: True
-  - TITLE: REQUIREMENT_LEVEL
+  - TITLE: PRESENCE_STATUS
     TYPE: SingleChoice(M, R, O, X)
     REQUIRED: True
   - TITLE: STATEMENT

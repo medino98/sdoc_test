@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Stamp LAST_MODIFIED in every staged .sdoc file.
+
+StrictDoc has no native "last touched" field, so the document METADATA block
+carries one and this hook owns it. Only an existing LAST_MODIFIED line inside
+a METADATA block is rewritten -- the hook never inserts the field, because
+[DOCUMENT] config keys are order-sensitive and a misplaced METADATA block is a
+parse error. New documents inherit the field from Review_Record_TEMPLATE.sdoc.
+"""
+
+import re
+import subprocess
+import sys
+from datetime import date
+
+# "  LAST_MODIFIED: <anything>", captured so only the value is replaced.
+LAST_MODIFIED_RE = re.compile(
+    r"^(?P<indent>[ \t]+)LAST_MODIFIED:[ \t]*(?P<value>.*)$", re.MULTILINE
+)
+
+
+def git(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args], capture_output=True, text=True, check=True
+    ).stdout
+
+
+def staged_sdoc_files() -> list[str]:
+    output = git(
+        "diff", "--cached", "--name-only", "--diff-filter=ACM", "--", "*.sdoc"
+    )
+    return [line for line in output.splitlines() if line]
+
+
+def has_unstaged_changes(path: str) -> bool:
+    return bool(git("diff", "--name-only", "--", path).strip())
+
+
+def metadata_block_span(text: str) -> tuple[int, int] | None:
+    """Locate the document-level METADATA block.
+
+    The block runs from the "METADATA:" line to the first line that is not an
+    indented key-value pair. Only the [DOCUMENT] config counts, so the search
+    stops at the first node or grammar marker.
+    """
+    lines = text.splitlines(keepends=True)
+    offset = 0
+    start = None
+    for line in lines:
+        stripped = line.rstrip("\n")
+        if start is None:
+            if stripped.startswith("[") or stripped == "":
+                # Left the config block without finding METADATA.
+                if stripped.startswith("[") and stripped != "[DOCUMENT]":
+                    return None
+                if stripped == "":
+                    return None
+            if stripped == "METADATA:":
+                start = offset
+        elif not (stripped.startswith(("  ", "\t")) and ":" in stripped):
+            return (start, offset)
+        offset += len(line)
+    return (start, offset) if start is not None else None
+
+
+def stamp(path: str, today: str) -> bool:
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+
+    span = metadata_block_span(text)
+    if span is None:
+        print(
+            f"sdoc-stamp: {path}: no document METADATA block, skipping "
+            f"(add 'METADATA:' + '  LAST_MODIFIED: {today}' under VERSION)",
+            file=sys.stderr,
+        )
+        return False
+
+    start, end = span
+    block = text[start:end]
+    match = LAST_MODIFIED_RE.search(block)
+    if match is None:
+        print(
+            f"sdoc-stamp: {path}: METADATA block has no LAST_MODIFIED key, "
+            "skipping",
+            file=sys.stderr,
+        )
+        return False
+    if match.group("value").strip() == today:
+        return False
+
+    new_block = (
+        block[: match.start()]
+        + f"{match.group('indent')}LAST_MODIFIED: {today}"
+        + block[match.end() :]
+    )
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(text[:start] + new_block + text[end:])
+    return True
+
+
+def main() -> int:
+    today = date.today().isoformat()
+    stamped = []
+    for path in staged_sdoc_files():
+        if has_unstaged_changes(path):
+            # Re-staging here would sweep in unstaged work the author chose to
+            # leave out of this commit.
+            print(
+                f"sdoc-stamp: {path}: has unstaged changes, not stamping",
+                file=sys.stderr,
+            )
+            continue
+        try:
+            if stamp(path, today):
+                stamped.append(path)
+        except OSError as exc:
+            print(f"sdoc-stamp: {path}: {exc}", file=sys.stderr)
+            return 1
+
+    if stamped:
+        git("add", "--", *stamped)
+        print(f"sdoc-stamp: LAST_MODIFIED -> {today}: {', '.join(stamped)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

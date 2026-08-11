@@ -1,0 +1,156 @@
+name: CI and Strictdoc
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# A new push supersedes the in-flight run for the same PR.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  STRICTDOC_VERSION: "0.27.1"
+  REVIEW_DOC: src/LVGL_Safe_PoC_Review.sdoc
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # CMakeLists.txt lives in src/, not at the repo root.
+      - name: Configure CMake
+        run: cmake -B ${{ github.workspace }}/build -S ${{ github.workspace }}/src
+
+      - name: Build
+        run: cmake --build ${{ github.workspace }}/build
+
+      - name: Test
+        run: |
+          # Without pipefail the step takes tee's exit status and a failing
+          # test reports green, which would seed a review record on a broken PR.
+          set -o pipefail
+          ${{ github.workspace }}/build/hello_test \
+            --gtest_filter='Hello*' \
+            --gtest_output=xml:${{ github.workspace }}/report.xml | tee test_result.txt
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-result
+          path: |
+            test_result.txt
+            report.xml
+
+  # Only runs once the build is green, so a broken PR never gets a review
+  # record. Skipped for fork PRs, which cannot be pushed to from here.
+  seed-review:
+    needs: build-test
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Collect the files this PR changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '.files[].path' > "$RUNNER_TEMP/changed_files.txt"
+
+      - name: Seed the review record
+        id: seed
+        run: |
+          python3 tools/seed_review_record.py \
+            --pr ${{ github.event.pull_request.number }} \
+            --doc "$REVIEW_DOC" \
+            --files-from "$RUNNER_TEMP/changed_files.txt"
+
+      - name: Commit it to the PR branch
+        if: steps.seed.outputs.changed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$REVIEW_DOC"
+          git commit -m "docs: seed review record REVIEW-PR${{ github.event.pull_request.number }}"
+          # The reviewer may have pushed while this job was running.
+          git pull --rebase origin "${{ github.event.pull_request.head.ref }}"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+      - name: Tell the reviewer
+        if: steps.seed.outputs.seeded == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body \
+          "Build and tests are green, and review record \`REVIEW-PR${{ github.event.pull_request.number }}\` has been seeded into \`$REVIEW_DOC\`.
+
+          Fill in the findings, participants and decision:
+
+          \`\`\`
+          gh pr checkout ${{ github.event.pull_request.number }} && strictdoc server .
+          \`\`\`
+
+          Then commit and push. \`verify-review\` stays red until every template placeholder is replaced; the rendered document is attached to that job as the \`strictdoc-html\` artifact."
+
+  # The merge gate. Runs even when seed-review is skipped (fork PRs) so the
+  # required check always reports a result.
+  verify-review:
+    needs: [build-test, seed-review]
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      needs.build-test.result == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      # The branch tip, so the commit seed-review just pushed is included.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install StrictDoc
+        run: pip install "strictdoc==${{ env.STRICTDOC_VERSION }}"
+
+      # Proves the document parses against src/grammar.sgra and that every
+      # enum field holds a value the grammar allows.
+      - name: Validate and render the document tree
+        run: strictdoc export . --output-dir "$RUNNER_TEMP/strictdoc"
+
+      - name: Upload the rendered review document
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strictdoc-html
+          path: ${{ runner.temp }}/strictdoc/html
+
+      # Checks what a schema cannot: that this PR's record is actually filled in.
+      # Add --require-decision and --require-closed-findings to also block on an
+      # unresolved review outcome.
+      - name: Check the review record is complete
+        run: |
+          python3 tools/verify_review_record.py \
+            --pr ${{ github.event.pull_request.number }} \
+            --doc "$REVIEW_DOC"
