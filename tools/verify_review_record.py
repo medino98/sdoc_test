@@ -4,12 +4,20 @@
 Complements `strictdoc export`, which proves the document parses against
 grammar.sgra but is happy with a record still full of template placeholders.
 This checks the parts a schema cannot: that a record for this PR exists, that
-every placeholder the template shipped has been replaced, and that the record
-still names the files the PR touches.
+every placeholder has been replaced, and that the record names the files the
+PR touches.
 
-Placeholders are not guessed from a pattern -- they are read out of the
-template itself, so a "<vector>" inside a finding statement is not mistaken for
-one, and a reworded template needs no change here.
+A placeholder is any <angle-bracketed> run of text left in the record. An
+earlier version instead compared the record against the placeholder strings
+found in the template, which fails open: someone filled the template in with a
+real review, so the list came back empty and a record consisting of nothing but
+placeholders was reported as complete. Deriving the rule from a file anyone can
+edit means the gate can be switched off by editing that file, so the rule is
+structural now and the template is only checked for still being a template.
+
+The cost is that a finding statement cannot contain literal angle brackets --
+write `#include <vector>` as "include vector" or the check will call it an
+unfilled placeholder.
 
 Exits non-zero on any failure, listing every problem at once.
 """
@@ -66,17 +74,38 @@ def mask_delimiters(text: str) -> str:
     return DELIMITER_RE.sub("\0\0\0", text)
 
 
-def template_placeholders(template_text: str) -> list[str]:
-    """Every literal <...> the template ships, longest first.
+def placeholders_in(text: str) -> list[str]:
+    """Every <...> run in `text`, longest first.
 
-    Longest first so a nested or overlapping match reports the most specific
-    placeholder rather than a fragment of it.
+    Longest first so an overlapping match reports the most specific placeholder
+    rather than a fragment of it.
     """
     found = {
-        match.group(0)
-        for match in PLACEHOLDER_RE.finditer(mask_delimiters(template_text))
+        match.group(0) for match in PLACEHOLDER_RE.finditer(mask_delimiters(text))
     }
     return sorted(found, key=len, reverse=True)
+
+
+def check_template(template_text: str) -> list[str]:
+    """Guard the template against having been used as a review record.
+
+    The seeder copies this file, so a template that has been filled in produces
+    records that are wrong from the first line -- and its UID stem no longer
+    gets rewritten, so every PR would append the same colliding UID.
+    """
+    problems = []
+    if not placeholders_in(template_text):
+        problems.append(
+            "the template has no placeholders left -- it looks like it was "
+            "filled in as a review record; restore it and move the content "
+            "into the review document"
+        )
+    if not re.search(r"^UID: REVIEW-RN$", template_text, re.MULTILINE):
+        problems.append(
+            "the template's record UID is not 'REVIEW-RN', so the seeder "
+            "cannot rewrite it into a per-PR UID"
+        )
+    return problems
 
 
 def quote(text: str) -> str:
@@ -84,15 +113,12 @@ def quote(text: str) -> str:
     return collapsed if len(collapsed) <= 60 else collapsed[:57] + "..."
 
 
-def check(record: str, placeholders: list[str], require_decision: bool,
+def check(record: str, require_decision: bool,
           require_closed_findings: bool) -> list[str]:
     problems: list[str] = []
 
-    for placeholder in placeholders:
-        if placeholder in record:
-            problems.append(
-                f"unfilled template placeholder: {quote(placeholder)}"
-            )
+    for placeholder in placeholders_in(record):
+        problems.append(f"unfilled placeholder: {quote(placeholder)}")
 
     dur = DUR_RE.search(record)
     if dur is None:
@@ -166,16 +192,14 @@ def main() -> int:
 
     uid = f"REVIEW-PR{args.pr}"
     record = find_record(read(args.doc), uid)
+    problems = check_template(read(args.template))
 
     if record is None:
-        problems = [f"no [[REVIEW_RECORD]] with UID {uid} in {args.doc}"]
+        problems.append(f"no [[REVIEW_RECORD]] with UID {uid} in {args.doc}")
         finding_count = 0
     else:
-        problems = check(
-            record,
-            template_placeholders(read(args.template)),
-            args.require_decision,
-            args.require_closed_findings,
+        problems += check(
+            record, args.require_decision, args.require_closed_findings
         )
         finding_count = len(FINDING_RE.findall(record))
 

@@ -17,7 +17,7 @@ concurrency:
 
 env:
   STRICTDOC_VERSION: "0.27.1"
-  REVIEW_DOC: src/LVGL_Safe_PoC_Review.sdoc
+  REVIEW_DOC: src/Review_Record_LVGL_Safe.sdoc
 
 jobs:
   build-test:

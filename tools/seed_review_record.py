@@ -55,7 +55,16 @@ def template_record(template_text: str) -> str:
     end = template_text.rfind(RECORD_CLOSE)
     if start == -1 or end == -1:
         fail("template has no [[REVIEW_RECORD]] block")
-    return template_text[start : end + len(RECORD_CLOSE)]
+    block = template_text[start : end + len(RECORD_CLOSE)]
+    # Without the REVIEW-RN stem the UID rewrite below is a no-op, and every PR
+    # would append a record carrying whatever UID the template happens to hold
+    # -- a duplicate the second time around.
+    if not re.search(r"^UID: REVIEW-RN$", block, re.MULTILINE):
+        fail(
+            "template record UID is not 'REVIEW-RN' -- the template looks like "
+            "it was edited as if it were a review record"
+        )
+    return block
 
 
 def find_record(text: str, uid: str) -> tuple[int, int] | None:
