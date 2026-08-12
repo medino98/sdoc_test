@@ -50,3 +50,45 @@ Just a test.
 [[/SECTION]]
 
 [[/REVIEW_RECORD]]
+
+[[REVIEW_RECORD]]
+UID: REVIEW-PR5
+TITLE: RN - <Review type> (<YYYY-MM-DD>)
+REVIEW_TYPE: Generic Document Review
+METHOD: 4-Eye
+REVIEW_DATE: 2026-08-12
+DECISION: Not-to-be-released-successive-review-required
+STATEMENT: >>>
+<Scope and purpose of this review: what was reviewed, against which
+baseline, and anything a later reader needs to interpret the decision.>
+<<<
+DOCUMENT_UNDER_REVIEW: >>>
+src/test_2.txt
+<<<
+
+[[SECTION]]
+TITLE: Participants
+
+[PARTICIPANT]
+UID: REVIEW-PR5-PARTICIPANT-001
+NAME: <Firstname SURNAME>
+PROJECT_ROLE: Reviewer
+PRESENCE_STATUS: M
+
+[[/SECTION]]
+
+[[SECTION]]
+TITLE: Review Protocol
+
+[FINDING]
+UID: REVIEW-PR5-FINDING-001
+IDENTIFIER: <file / line / Polarion item the finding is against>
+SEVERITY: Minor
+FINDING_STATUS: Open
+DONE_BY: <Firstname SURNAME>
+FINDING_DATE: <YYYY-MM-DD>
+STATEMENT: <What is wrong, and why it is wrong.>
+
+[[/SECTION]]
+
+[[/REVIEW_RECORD]]
