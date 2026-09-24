@@ -1,7 +1,7 @@
 [DOCUMENT]
-TITLE: Review Record TEMPLATE
-UID: REVIEW-RECORD-TEMPLATE
-VERSION: 0.2
+TITLE: C Coding Guideline Review
+UID: C-CODING-GUIDELINE-REVIEW
+VERSION: 1.0
 METADATA:
   LAST_MODIFIED: 2026-09-24
 
@@ -9,28 +9,31 @@ METADATA:
 IMPORT_FROM_FILE: grammar.sgra
 
 [[REVIEW_RECORD]]
-UID: REVIEW-RN
-TITLE: RN - <Review type> (<YYYY-MM-DD>)
+UID: GL_302-REVIEW-R1
+TITLE: R1 - Walkthrough (2026-09-24)
 REVIEW_TYPE: Generic Document Review
-METHOD: 4-Eye
-REVIEW_DATE: <YYYY-MM-DD>
-DECISION: Not-to-be-released-successive-review-required
+METHOD: Walkthrough
+REVIEW_DATE: 2026-09-24
+DECISION: To-be-released
 STATEMENT: >>>
-<Scope and purpose of this review: what was reviewed, against which
-baseline, and anything a later reader needs to interpret the decision.>
+After mutual consideration, the document had no known or found issues.
 <<<
 DOCUMENT_UNDER_REVIEW: >>>
-<\path\to\File A>
-<\path\to\File B>
-<Polarion-NNNNN>
+https://internal.lvgl.io/polarion/#/project/lvglsafe/wiki/Guidelines/GL_302?revision=1601
 <<<
 
 [[SECTION]]
 TITLE: Participants
 
 [PARTICIPANT]
-UID: REVIEW-RN-PARTICIPANT-001
-NAME: <Firstname SURNAME>
+UID: REVIEW-R1-PARTICIPANT-001
+NAME: Máté GULYÁS
+PROJECT_ROLE: Reviewer
+PRESENCE_STATUS: M
+
+[PARTICIPANT]
+UID: REVIEW-R1-PARTICIPANT-002
+NAME: Péter TARJÁN
 PROJECT_ROLE: Reviewer
 PRESENCE_STATUS: M
 
@@ -46,7 +49,9 @@ SEVERITY: Minor
 FINDING_STATUS: Open
 DONE_BY: <Firstname SURNAME>
 FINDING_DATE: <YYYY-MM-DD>
-STATEMENT: <What is wrong, and why it is wrong.>
+STATEMENT: >>>
+Okay, no problem.
+<<<
 
 [[/SECTION]]
 
